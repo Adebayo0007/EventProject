@@ -20,4 +20,16 @@ namespace EventProject.Models
 
         public Event Event { get; set; }
     }
+
+    public class EventBookingRequestModel
+    {
+        public int EventId { get; set; }
+        [Required]
+        public string Name { get; set; }
+
+        [Required, EmailAddress]
+        public string Email { get; set; }
+
+        public string Comment { get; set; }
+    }
 }

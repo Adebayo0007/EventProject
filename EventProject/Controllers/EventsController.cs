@@ -1,4 +1,5 @@
 ﻿using EventProject.ApplicationDbContext;
+using EventProject.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -6,26 +7,26 @@ namespace EventProject.Controllers
 {
     public class EventsController : Controller
     {
-        private readonly EventDbContext _context;
+        private readonly IBookingService _bookingService;
 
-        public EventsController(EventDbContext context)
+        public EventsController(IBookingService bookingService)
         {
-            _context = context;
+           _bookingService = bookingService;
         }
 
         public async Task<IActionResult> Index(DateTime? date)
         {
-            var events = _context.Events.AsQueryable();
+            var events = await _bookingService.GetEvents();
 
             if (date.HasValue)
                 events = events.Where(e => e.EventDateTime.Date == date.Value.Date);
 
-            return View(await events.ToListAsync());
+            return View(events);
         }
 
         public async Task<IActionResult> Details(int id)
         {
-            var ev = await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
+            var ev = await _bookingService.GetEventById(id);
             if (ev == null) return NotFound();
             return View(ev);
         }

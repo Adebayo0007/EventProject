@@ -27,7 +27,9 @@
 }
 else
 {
-    <div class="alert alert-info">
+   @*  <div class="alert alert-info">
         Please log in to book this event.
-    </div>
+    </div> *@
+    <h3>Book Your Place</h3>
+    @await Html.PartialAsync("_BookingForm", Model.Id)
 }

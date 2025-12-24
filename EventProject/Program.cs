@@ -1,5 +1,6 @@
 using EventProject.ApplicationDbContext;
 using EventProject.Services;
+using EventProject.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventProject
@@ -16,8 +17,9 @@ namespace EventProject
             builder.Services.AddDbContext<EventDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("EventConnection")));
 
-            // Add Memberbase Service
+           
             builder.Services.AddHttpClient<MemberbaseService>();
+            builder.Services.AddScoped<IBookingService, BookingService>();
 
 
 
@@ -40,7 +42,7 @@ namespace EventProject
 
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
+                pattern: "{controller=Events}/{action=Index}/{id?}");
 
             app.Run();
         }

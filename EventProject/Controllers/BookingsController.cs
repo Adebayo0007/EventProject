@@ -1,35 +1,35 @@
 ﻿using EventProject.ApplicationDbContext;
 using EventProject.Models;
 using EventProject.Services;
+using EventProject.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventProject.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class BookingsController : Controller
     {
-        private readonly EventDbContext _context;
+        private readonly IBookingService _bookingService;
         private readonly MemberbaseService _memberbase;
 
-        public BookingsController(EventDbContext context, MemberbaseService memberbase)
+        public BookingsController(IBookingService bookingService, MemberbaseService memberbase)
         {
-            _context = context;
+            _bookingService = bookingService;
             _memberbase = memberbase;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(EventBooking booking)
+        public async Task<IActionResult> Create(EventBookingRequestModel bookingModel)
         {
             if (!ModelState.IsValid)
             {
                 TempData["Error"] = "Please correct the errors in the form.";
-                return RedirectToAction("Details", "Events", new { id = booking.EventId });
+                return RedirectToAction("Details", "Events", new { id = bookingModel.EventId });
             }
 
-            var ev = await _context.Events
-                .FirstOrDefaultAsync(e => e.Id == booking.EventId);
+            var ev = await _bookingService.GetEventById(bookingModel.EventId);
 
             if (ev == null)
             {
@@ -37,32 +37,33 @@ namespace EventProject.Controllers
                 return RedirectToAction("Index", "Events");
             }
 
-            var currentBookings = await _context.EventBookings
-                .CountAsync(b => b.EventId == booking.EventId && b.Status == "Confirmed");
+            var currentBookings = await _bookingService.GetNumberOfConfirmedBooking(bookingModel.EventId);
 
             if (currentBookings >= ev.Capacity)
             {
                 TempData["Error"] = "Sorry, this event is fully booked.";
-                return RedirectToAction("Details", "Events", new { id = booking.EventId });
+                return RedirectToAction("Details", "Events", new { id = bookingModel.EventId });
             }
+            var createResponse = await _bookingService.Create(bookingModel);
+            if(createResponse)
+            {
+                var result = await _memberbase.CreateOrGetContact(
+              bookingModel.Name,
+              bookingModel.Email
+              );
 
-            booking.DateBooked = DateTime.UtcNow;
-            booking.Status = "Confirmed";
+                if (!result.Success)
+                    TempData["Error"] = "Booking saved, but CRM sync failed.";
+                else
+                    TempData["Success"] = "Your booking has been confirmed!";
 
-            _context.EventBookings.Add(booking);
-            await _context.SaveChangesAsync();
+                return RedirectToAction("Confirmation");
 
-            var result = await _memberbase.CreateOrGetContact(
-                booking.Name,
-                booking.Email
-            );
+            }
+            TempData["Error"] = "Sorry, an error occur when saving your data.";
+            return RedirectToAction("Details", "Events", new { id = bookingModel.EventId });
 
-            if (!result.Success)
-                TempData["Error"] = "Booking saved, but CRM sync failed.";
-            else
-                TempData["Success"] = "Your booking has been confirmed!";
 
-            return RedirectToAction("Confirmation");
         }
 
 
