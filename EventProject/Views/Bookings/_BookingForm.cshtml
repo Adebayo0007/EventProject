@@ -1,0 +1,28 @@
+﻿@model int
+
+<form asp-controller="Bookings"
+      asp-action="Create"
+      method="post"
+      class="card p-4">
+
+    <input type="hidden" name="EventId" value="@Model" />
+
+    <div class="mb-3">
+        <label class="form-label">Name</label>
+        <input name="Name" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input name="Email" type="email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Comment (Optional)</label>
+        <textarea name="Comment" class="form-control"></textarea>
+    </div>
+
+    <button type="submit" class="btn btn-success">
+        Confirm Booking
+    </button>
+</form>

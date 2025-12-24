@@ -1,4 +1,5 @@
 using EventProject.ApplicationDbContext;
+using EventProject.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace EventProject
@@ -15,7 +16,10 @@ namespace EventProject
             builder.Services.AddDbContext<EventDbContext>(options =>
             options.UseSqlServer(builder.Configuration.GetConnectionString("EventConnection")));
 
-           
+            // Add Memberbase Service
+            builder.Services.AddHttpClient<MemberbaseService>();
+
+
 
             var app = builder.Build();
 

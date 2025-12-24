@@ -3,6 +3,7 @@ using EventProject.Models;
 using EventProject.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EventProject.Controllers
 {
@@ -27,21 +28,43 @@ namespace EventProject.Controllers
                 return RedirectToAction("Details", "Events", new { id = booking.EventId });
             }
 
+            var ev = await _context.Events
+                .FirstOrDefaultAsync(e => e.Id == booking.EventId);
+
+            if (ev == null)
+            {
+                TempData["Error"] = "Event not found.";
+                return RedirectToAction("Index", "Events");
+            }
+
+            var currentBookings = await _context.EventBookings
+                .CountAsync(b => b.EventId == booking.EventId && b.Status == "Confirmed");
+
+            if (currentBookings >= ev.Capacity)
+            {
+                TempData["Error"] = "Sorry, this event is fully booked.";
+                return RedirectToAction("Details", "Events", new { id = booking.EventId });
+            }
+
             booking.DateBooked = DateTime.UtcNow;
             booking.Status = "Confirmed";
 
             _context.EventBookings.Add(booking);
             await _context.SaveChangesAsync();
 
-            var synced = await _memberbase.CreateOrGetContact(booking.Name, booking.Email);
+            var result = await _memberbase.CreateOrGetContact(
+                booking.Name,
+                booking.Email
+            );
 
-            if (!synced)
-                TempData["Error"] = "Booking saved but CRM sync failed.";
+            if (!result.Success)
+                TempData["Error"] = "Booking saved, but CRM sync failed.";
             else
                 TempData["Success"] = "Your booking has been confirmed!";
 
             return RedirectToAction("Confirmation");
         }
+
 
         public IActionResult Confirmation()
         {
